@@ -13,7 +13,6 @@
 
 #include <memory>
 
-
 #include <chrono>
 #include <functional>
 #include <atomic>
@@ -23,6 +22,8 @@
 #include "ListBuffer.hpp"
 #include "CycleBuffer.hpp"
 #include "SocketAddr.hpp"
+#include "OrdinalBuffer.hpp"
+
 
 namespace uv
 {
@@ -56,8 +57,8 @@ public :
     void onSocketClose();
     void close(std::function<void(std::string&)> callback);
 
-    int write(const char* buf,ssize_t size,AfterWriteCallback callback);
-    void writeInLoop(const char* buf,ssize_t size,AfterWriteCallback callback);
+    int write(const char* buf,ssize_t size,AfterWriteCallback callback, bool isMalloc=false, bool isFree=false);
+    void writeInLoop(const char* buf,ssize_t size,AfterWriteCallback callback, bool isMalloc=false);
 
     void setWrapper(std::shared_ptr<ConnectionWrapper> wrapper);
     std::shared_ptr<ConnectionWrapper> getWrapper();
@@ -71,6 +72,7 @@ public :
     const std::string& Name();
 
     PacketBufferPtr getPacketBuffer();
+
 private:
     void onMessage(const char* buf, ssize_t size);
     void CloseComplete();
@@ -85,6 +87,7 @@ private :
     std::string data_;
     PacketBufferPtr buffer_;
     std::weak_ptr<ConnectionWrapper> wrapper_;
+    int statWriteAggressive = 0;        // if aggressive is too large, may cause some error
 
     OnMessageCallback onMessageCallback_;
     OnCloseCallback onConnectCloseCallback_;

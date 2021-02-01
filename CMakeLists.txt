@@ -22,3 +22,6 @@ MESSAGE("building...")
 
 ADD_LIBRARY (${PROJECT_NAME} STATIC ${SOURCES} )
 TARGET_LINK_LIBRARIES(${PROJECT_NAME} "libuv.a" -pthread)
+
+ADD_SUBDIRECTORY(examples)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR})

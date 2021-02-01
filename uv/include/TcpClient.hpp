@@ -27,8 +27,8 @@ public:
     enum ConnectStatus
     {
         OnConnectSuccess,
-        OnConnnectFail,
-        OnConnnectClose
+        OnConnectFail,
+        OnConnectClose
     };
     using ConnectStatusCallback = std::function<void(ConnectStatus)>;
 public:

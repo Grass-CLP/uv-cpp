@@ -17,6 +17,7 @@
 #include <mutex>
 
 #include "EventLoop.hpp"
+#include "SpinMutex.hpp"
 
 
 namespace uv
@@ -36,7 +37,7 @@ public:
     EventLoop* Loop();
 private:
     EventLoop* loop_;
-    std::mutex mutex_;
+    SpinMutex mutex_;
     uv_async_t* handle_;
     std::queue<DefaultCallback> callbacks_;
     OnCloseCompletedCallback onCloseCompletCallback_;

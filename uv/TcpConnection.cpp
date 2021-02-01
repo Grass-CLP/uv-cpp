@@ -23,6 +23,29 @@ struct WriteReq
     uv_write_t req;
     uv_buf_t buf;
     AfterWriteCallback callback;
+    bool isMalloc = false;
+    bool isFree = false;
+    int *stat = nullptr;
+
+    WriteReq(int *stat = nullptr) : stat(stat){}
+
+    ~WriteReq() {
+        if (stat) (*stat)++;
+        if (isFree)
+            free(buf.base);
+    }
+
+    void init_buf(bool isMalloc, bool isFree, const char* buffer, ssize_t size) {
+        this->isMalloc = isMalloc;
+        this->isFree = isMalloc ? true : isFree;
+        if (isMalloc) {
+            buf.base = static_cast<char *>(malloc(size));
+            memcpy(buf.base, buffer, size);
+            buf.len = size;
+        } else {
+            buf = uv_buf_init(const_cast<char*>(buffer), static_cast<unsigned int>(size));
+        }
+    }
 };
 
 struct WriteArgs
@@ -118,15 +141,16 @@ void TcpConnection::close(std::function<void(std::string&)> callback)
     }
 }
 
-int TcpConnection::write(const char* buf, ssize_t size, AfterWriteCallback callback)
+int TcpConnection::write(const char* buf, ssize_t size, AfterWriteCallback callback, bool isMalloc, bool isFree)
 {
     int rst;
     if (connected_)
     {
-        WriteReq* req = new WriteReq;
-        req->buf = uv_buf_init(const_cast<char*>(buf), static_cast<unsigned int>(size));
+        WriteReq* req = new WriteReq(&statWriteAggressive);
+        req->init_buf(isMalloc, isFree, buf, size);
         req->callback = callback;
         auto ptr = handle_.get();
+
         rst = ::uv_write((uv_write_t*)req, (uv_stream_t*)ptr, &req->buf, 1,
             [](uv_write_t *req, int status)
         {
@@ -164,23 +188,16 @@ int TcpConnection::write(const char* buf, ssize_t size, AfterWriteCallback callb
     return rst;
 }
 
-void TcpConnection::writeInLoop(const char* buf, ssize_t size, AfterWriteCallback callback)
+void TcpConnection::writeInLoop(const char* buf, ssize_t size, AfterWriteCallback callback, bool isMalloc)
 {
     std::weak_ptr<uv::TcpConnection> conn = shared_from_this();
-    loop_->runInThisLoop(
-        [conn,buf,size, callback]()
-    {
-        std::shared_ptr<uv::TcpConnection> ptr = conn.lock();
-        if (ptr != nullptr)
-        {
-            ptr->write(buf, size, callback);
-        }
-        else
-        {
-            struct WriteInfo info = { WriteInfo::Disconnected,const_cast<char*>(buf),static_cast<unsigned long>(size) };
-            callback(info);
-        }
-    });
+    if (isMalloc) {
+        char *buffer = static_cast<char *>(malloc(size));
+        memcpy(buffer, buf, size);
+        loop_->runInThisLoop(std::bind(&TcpConnection::write, this, buffer, size, callback, false, true));
+    } else {
+        loop_->runInThisLoop(std::bind(&TcpConnection::write, this, buf, size, callback, false, false));
+    }
 }
 
 

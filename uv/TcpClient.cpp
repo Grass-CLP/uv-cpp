@@ -128,7 +128,7 @@ void uv::TcpClient::close(std::function<void(uv::TcpClient*)> callback)
 
 void uv::TcpClient::afterConnectFail()
 {
-    runConnectCallback(TcpClient::OnConnnectFail);
+    runConnectCallback(TcpClient::OnConnectFail);
 }
 
 void uv::TcpClient::write(const char* buf, unsigned int size, AfterWriteCallback callback)
@@ -201,5 +201,5 @@ void uv::TcpClient::onClose(std::string& name)
 {
     //connection_ = nullptr;
     uv::LogWriter::Instance()->info("Close tcp client connection complete.");
-    runConnectCallback(TcpClient::OnConnnectClose);
+    runConnectCallback(TcpClient::OnConnectClose);
 }

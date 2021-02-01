@@ -32,15 +32,16 @@ void Async::init()
 
 Async::~Async()
 {
-
+    delete handle_;
 }
 
 void Async::runInThisLoop(DefaultCallback callback)
 {
     {
-        std::lock_guard<std::mutex> lock(mutex_);
+        std::lock_guard<SpinMutex> lock(mutex_);
         callbacks_.push(callback);
     }
+
     if(handle_ != nullptr)
         ::uv_async_send(handle_);
 }
@@ -49,9 +50,10 @@ void uv::Async::process()
 {
     std::queue<DefaultCallback> callbacks;
     {
-        std::lock_guard<std::mutex> lock(mutex_);
+        std::lock_guard<SpinMutex> lock(mutex_);
         callbacks_.swap(callbacks);
     }
+
     while (!callbacks.empty())
     {
         auto func = callbacks.front();
