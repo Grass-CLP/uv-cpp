@@ -190,13 +190,16 @@ int TcpConnection::write(const char* buf, ssize_t size, AfterWriteCallback callb
 
 void TcpConnection::writeInLoop(const char* buf, ssize_t size, AfterWriteCallback callback, bool isMalloc)
 {
-    std::weak_ptr<uv::TcpConnection> conn = shared_from_this();
-    if (isMalloc) {
-        char *buffer = static_cast<char *>(malloc(size));
-        memcpy(buffer, buf, size);
-        loop_->runInThisLoop(std::bind(&TcpConnection::write, this, buffer, size, callback, false, true));
+    if (loop_->isRunInLoopThread() || loop_->isStoped()) {
+        write(buf, size, callback, isMalloc);
     } else {
-        loop_->runInThisLoop(std::bind(&TcpConnection::write, this, buf, size, callback, false, false));
+        if (isMalloc) {
+            char *buffer = static_cast<char *>(malloc(size));
+            memcpy(buffer, buf, size);
+            loop_->runInThisLoop(std::bind(&TcpConnection::write, this, buffer, size, callback, false, true));
+        } else {
+            loop_->runInThisLoop(std::bind(&TcpConnection::write, this, buf, size, callback, false, false));
+        }
     }
 }
 
