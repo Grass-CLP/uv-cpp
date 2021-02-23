@@ -58,7 +58,7 @@ public :
     void close(std::function<void(std::string&)> callback);
 
     int write(const char* buf,ssize_t size,AfterWriteCallback callback, bool isMalloc=false, bool isFree=false);
-    void writeInLoop(const char* buf,ssize_t size,AfterWriteCallback callback, bool isMalloc=false);
+    void writeInLoop(const char *buf, ssize_t size, AfterWriteCallback callback, bool isMalloc = false, bool isFree = false);
 
     void setWrapper(std::shared_ptr<ConnectionWrapper> wrapper);
     std::shared_ptr<ConnectionWrapper> getWrapper();

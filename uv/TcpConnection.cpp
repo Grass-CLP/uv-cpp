@@ -188,10 +188,10 @@ int TcpConnection::write(const char* buf, ssize_t size, AfterWriteCallback callb
     return rst;
 }
 
-void TcpConnection::writeInLoop(const char* buf, ssize_t size, AfterWriteCallback callback, bool isMalloc)
+void TcpConnection::writeInLoop(const char *buf, ssize_t size, AfterWriteCallback callback, bool isMalloc, bool isFree)
 {
     if (loop_->isRunInLoopThread() || loop_->isStoped()) {
-        write(buf, size, callback, isMalloc);
+        write(buf, size, callback, isMalloc, isFree);
     } else {
         if (isMalloc) {
             char *buffer = static_cast<char *>(malloc(size));
