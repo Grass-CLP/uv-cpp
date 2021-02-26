@@ -21,7 +21,7 @@ namespace uv {
 
 class OrdinalBuffer {
 public:
-    OrdinalBuffer(size_t size = 1 << 20) : buf_size(size), org_size(size) {
+    OrdinalBuffer(size_t size) : buf_size(size), org_size(size) {
         buffer = new char[size];
     }
 
@@ -29,10 +29,12 @@ public:
         _clear();
     }
 
-    void append(const void *data, size_t size) {
-        _reserve_size(size);
+    bool append(const void *data, size_t size) {
+        if (!_reserve_size(size)) return false;
         memcpy(buffer + w_index, data, size);
         w_index += size;
+
+        return true;
     }
 
     void * read() {
@@ -43,8 +45,8 @@ public:
         return buffer + w_index;
     }
 
-    void resize(size_t size) {
-        _reserve_size(size);
+    bool resize(size_t size) {
+        return _reserve_size(size);
     }
 
     void * read(size_t size) {
@@ -65,6 +67,10 @@ public:
         return w_index - r_index;
     }
 
+    size_t writable_size() {
+        return buf_size - w_index;
+    }
+
     size_t capacity() {
         return buf_size;
     }
@@ -77,9 +83,11 @@ protected:
         }
     }
 
-    void _reserve_size(size_t size) {
+    bool _reserve_size(size_t size) {
         // need relarge, dangerous, cause point for reader may be wild when opt_large
         if (r_index + (buf_size - w_index) < size) {
+//            return false;   // no large
+
             _opt_large();
             _reserve_size(size);  // check next
         }
@@ -87,8 +95,10 @@ protected:
         // need turn
         if (w_index + size > buf_size) {
             _turn();
-            _reserve_size(size);
+            return _reserve_size(size);
         }
+
+        return true;
     }
 
     void _turn() {
