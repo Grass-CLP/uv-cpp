@@ -32,7 +32,6 @@ void Async::init()
 
 Async::~Async()
 {
-    delete handle_;
 }
 
 void Async::runInThisLoop(DefaultCallback callback)
